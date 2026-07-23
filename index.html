@@ -1077,7 +1077,8 @@ function buildOrderMessage(){
     const qty = cart[id];
     const lt = p.p * qty;
     total += lt;
-    lines.push(qty+' x '+p.n+' ('+(p.u||'')+') — AED '+lt.toFixed(2));
+    const unitLabel = p.u ? ' ('+p.u+')' : '';
+    lines.push(p.n + unitLabel + ' — AED ' + p.p.toFixed(2) + ' — Qty: ' + qty + ' — Total: AED ' + lt.toFixed(2));
   });
   lines.push('', '*Total: AED '+total.toFixed(2)+'*');
   const name = $('#custName') ? $('#custName').value.trim() : '';
