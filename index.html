@@ -1540,6 +1540,25 @@ function init(){
 }
 document.addEventListener('DOMContentLoaded', init);
 
+// Ensure main content is pushed below the sticky header+cat rail.
+function updateStickySpacing(){
+  const sg = document.querySelector('.sticky-group');
+  const m = document.querySelector('main');
+  if(!sg || !m) return;
+  const h = sg.getBoundingClientRect().height;
+  m.style.paddingTop = h + 'px';
+}
+let _stickyT;
+window.addEventListener('resize', ()=>{ clearTimeout(_stickyT); _stickyT = setTimeout(updateStickySpacing, 120); });
+// watch for DOM changes that may change header height (e.g. search bar, tabs)
+const sg = document.querySelector('.sticky-group');
+if(sg && 'MutationObserver' in window){
+  const mo = new MutationObserver(()=> updateStickySpacing());
+  mo.observe(sg, {childList:true,subtree:true,attributes:true,characterData:true});
+}
+// run once after init
+setTimeout(updateStickySpacing, 250);
+
 </script>
 </body>
 </html>
