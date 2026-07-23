@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mobile Preview — Kentown</title>
+  <style>
+    body{margin:0;background:#f1f3f4;display:flex;align-items:center;justify-content:center;height:100vh;font-family:Arial,Helvetica,sans-serif}
+    .phone{width:390px;max-width:90vw;height:812px;background:#111;border-radius:28px;padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.35);display:flex;flex-direction:column}
+    .screen{flex:1;background:#fff;border-radius:16px;overflow:hidden;}
+    .note{position:fixed;left:16px;bottom:14px;background:#fff;padding:8px 12px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.12);font-size:13px}
+    .screen iframe{width:100%;height:100%;border:0}
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="screen"><iframe src="index.html" title="Kentown mobile preview"></iframe></div>
+  </div>
+  <div class="note">Open this file in your desktop browser to preview the mobile layout.</div>
+</body>
+</html>

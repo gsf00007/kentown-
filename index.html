@@ -1510,11 +1510,20 @@ $('#navSearch').addEventListener('click', ()=>{
 
 /* ---------- init ---------- */
 function init(){
-  renderCatRail();
-  renderOffers();
-  updateSectionTitle();
-  renderProducts(true);
-  updateCartBadge();
+  try{
+    renderCatRail();
+    renderOffers();
+    updateSectionTitle();
+    renderProducts(true);
+    updateCartBadge();
+    console.log('Init complete — products:', computeFiltered().length);
+  }catch(e){
+    console.error('Init error', e);
+    showToast('Initialization error — open console on mobile if possible');
+    try{
+      document.body.insertAdjacentHTML('afterbegin','<div id="initError" style="background:#FFF1F0;color:#800;padding:10px 12px;text-align:center;font-weight:700;">Initialization error: '+escapeHtml(String(e.message))+'</div>');
+    }catch(_){/* ignore */}
+  }
 }
 document.addEventListener('DOMContentLoaded', init);
 
