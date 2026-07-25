@@ -926,6 +926,21 @@ function updateSectionTitle(){
   }
 }
 
+function refreshStoreUi(){
+  invalidate();
+  renderCatRail();
+  updateSectionTitle();
+  renderOffers();
+  renderProducts(true);
+  updateCartBadge();
+  if(cartDrawer && cartDrawer.classList.contains('show')) renderCartDrawer();
+  if(pdModalOuter && pdModalOuter.classList.contains('show')){
+    const activeId = pdModalOuter.dataset.activeId;
+    const activeProduct = activeId ? getProduct(activeId) : null;
+    if(activeProduct) renderPd(activeProduct);
+  }
+}
+
 /* ---------- category rail: left/right slide buttons (like the offers carousel) ---------- */
 const catPrevBtn = $('#catPrevBtn');
 const catNextBtn = $('#catNextBtn');
@@ -1188,11 +1203,12 @@ const pdBox = $('#pdBox');
 function openProductDetail(id){
   const p = getProduct(id);
   if(!p) return;
+  pdModalOuter.dataset.activeId = id;
   renderPd(p);
   pdOverlay.classList.add('show');
   pdModalOuter.classList.add('show');
 }
-function closePd(){ pdOverlay.classList.remove('show'); pdModalOuter.classList.remove('show'); }
+function closePd(){ pdOverlay.classList.remove('show'); pdModalOuter.classList.remove('show'); delete pdModalOuter.dataset.activeId; }
 pdOverlay.addEventListener('click', closePd);
 function renderPd(p){
   const qty = cart[p.id]||0;
@@ -1262,6 +1278,9 @@ const adminOverlay = $('#adminOverlay');
 const adminModalOuter = $('#adminModalOuter');
 const adminBody = $('#adminBody');
 let pendingEditId = null;
+let activeAdminTab = 'add';
+let activeAdminQuery = '';
+let activeAdminEditId = null;
 
 function openAdmin(tab, editId){
   if(!isAdmin){
@@ -1269,7 +1288,7 @@ function openAdmin(tab, editId){
     if(pw === null) return;
     if(pw !== ADMIN_PASSWORD){ showToast('Incorrect password'); return; }
     isAdmin = true; // in-memory only — refreshing the page requires the password again
-    renderProducts(true); // to show edit-mini icons
+    refreshStoreUi(); // to show edit-mini icons immediately
   }
   adminOverlay.classList.add('show');
   adminModalOuter.classList.add('show');
@@ -1286,11 +1305,21 @@ document.querySelectorAll('.modal-tab').forEach(t=>{
   t.addEventListener('click', ()=>setAdminTab(t.dataset.tab));
 });
 function setAdminTab(tab, editId){
-  document.querySelectorAll('.modal-tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
-  if(tab==='add') renderAddProductTab();
-  else if(tab==='manage') renderManageProductsTab('', editId);
-  else if(tab==='offers') renderOffersTab();
-  else if(tab==='categories') renderCategoriesTab();
+  activeAdminTab = tab || 'add';
+  activeAdminEditId = editId || null;
+  document.querySelectorAll('.modal-tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===activeAdminTab));
+  if(activeAdminTab==='add') renderAddProductTab();
+  else if(activeAdminTab==='manage') renderManageProductsTab(activeAdminQuery, activeAdminEditId);
+  else if(activeAdminTab==='offers') renderOffersTab();
+  else if(activeAdminTab==='categories') renderCategoriesTab();
+}
+
+function refreshAdminPanel(){
+  if(!adminModalOuter || !adminModalOuter.classList.contains('show')) return;
+  if(activeAdminTab==='manage') renderManageProductsTab(activeAdminQuery, activeAdminEditId);
+  else if(activeAdminTab==='offers') renderOffersTab();
+  else if(activeAdminTab==='categories') renderCategoriesTab();
+  else renderAddProductTab();
 }
 
 /* ---------- image resize helper ---------- */
@@ -1372,24 +1401,24 @@ function renderAddProductTab(){
     else if(newProductImg) product.img = newProductImg; // otherwise uploaded file
     customProds.push(product);
     saveCustom();
-    invalidate();
     showToast('Product added: ' + name);
-    renderAddProductTab();
-    renderCatRail();
-    renderProducts(true);
+    refreshStoreUi();
+    refreshAdminPanel();
   });
 }
 
 /* ---------- admin: manage products ---------- */
 function renderManageProductsTab(presetQuery, editId){
+  activeAdminQuery = presetQuery || '';
   adminBody.innerHTML =
-    '<div class="field admin-search"><input id="mpSearch" type="text" placeholder="Search products to edit or remove..." value="'+escapeHtml(presetQuery||'')+'"></div>'+
+    '<div class="field admin-search"><input id="mpSearch" type="text" placeholder="Search products to edit or remove..." value="'+escapeHtml(activeAdminQuery)+'"></div>'+
     '<div class="admin-list" id="mpList"></div>';
   $('#mpSearch').addEventListener('input', ()=>{
     clearTimeout(searchDebounce);
-    searchDebounce = setTimeout(()=>renderMpList($('#mpSearch').value), 150);
+    activeAdminQuery = $('#mpSearch').value;
+    searchDebounce = setTimeout(()=>renderMpList(activeAdminQuery), 150);
   });
-  renderMpList(presetQuery||'', editId);
+  renderMpList(activeAdminQuery, editId);
 }
 function renderMpList(query, editId){
   const list = $('#mpList');
@@ -1431,10 +1460,9 @@ function renderMpList(query, editId){
       saveDeleted();
     }
     delete cart[id]; saveCart(); updateCartBadge();
-    invalidate();
     showToast('Product removed');
-    renderMpList(query);
-    renderProducts(true);
+    refreshStoreUi();
+    refreshAdminPanel();
   }));
 }
 let editImgTemp = null;
@@ -1462,11 +1490,9 @@ function mpEditRow(p){
         overrides[p.id] = Object.assign({}, overrides[p.id], patch);
         saveOverrides();
       }
-      invalidate();
       showToast('Product updated');
-      renderCatRail();
-      renderProducts(true);
-      renderMpList(document.getElementById('mpSearch') ? document.getElementById('mpSearch').value : '');
+      refreshStoreUi();
+      refreshAdminPanel();
     });
     document.getElementById('mpECancel').addEventListener('click', ()=>renderMpList(document.getElementById('mpSearch').value));
   }, 0);
@@ -1516,8 +1542,8 @@ function renderOffersTab(){
     offers.push({id:'o'+Date.now(), title, subtitle:sub, img: imgLink || newOfferImg});
     saveOffers();
     showToast('Offer added');
-    renderOffers();
-    renderOffersTab();
+    refreshStoreUi();
+    refreshAdminPanel();
   });
   renderOfList();
 }
@@ -1534,8 +1560,8 @@ function renderOfList(){
   list.querySelectorAll('.btn-danger').forEach(b=>b.addEventListener('click', ()=>{
     offers = offers.filter(o=>o.id!==b.dataset.id);
     saveOffers();
-    renderOffers();
-    renderOfList();
+    refreshStoreUi();
+    refreshAdminPanel();
     showToast('Offer removed');
   }));
 }
@@ -1568,16 +1594,16 @@ function renderCategoriesTab(){
     extraCats.push({id, label, icon});
     saveExtraCats();
     showToast('Category added');
-    renderCatRail();
-    renderCategoriesTab();
+    refreshStoreUi();
+    refreshAdminPanel();
   });
   adminBody.querySelectorAll('[data-catid]').forEach(b=>b.addEventListener('click', ()=>{
     const count = parseInt(b.dataset.count);
     if(count>0){ showToast('Move or remove its products before deleting this category'); return; }
     extraCats = extraCats.filter(c=>c.id!==b.dataset.catid);
     saveExtraCats();
-    renderCatRail();
-    renderCategoriesTab();
+    refreshStoreUi();
+    refreshAdminPanel();
     showToast('Category removed');
   }));
 }
