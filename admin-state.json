@@ -1,0 +1,28 @@
+{
+  "overrides": {
+    "K00001": {
+      "n": "Almarai Vetal Layered Black Cherry Yogurt",
+      "c": "dairy",
+      "p": 2,
+      "u": "140 gr",
+      "img": "https://www.goshoppi.ae/images/variants/Almarai-Vetal-Layered-Fruit-Yoghurt-Black-Cherry-140g.jpg"
+    }
+  },
+  "customProds": [],
+  "deletedIds": [],
+  "extraCats": [],
+  "offers": [
+    {
+      "id": "o1",
+      "title": "Fresh savings, every single day",
+      "subtitle": "Great prices on the essentials your kitchen never runs out of.",
+      "img": null
+    },
+    {
+      "id": "o1784978542089",
+      "title": "Fast and Free home delivery",
+      "subtitle": "",
+      "img": null
+    }
+  ]
+}

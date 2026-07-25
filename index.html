@@ -623,6 +623,9 @@ footer a{color:var(--amber-500);font-weight:600;}
 
 <div class="toast" id="toast"></div>
 
+<script id="kentown-admin-state">
+window.__KENTOWN_ADMIN_STATE__ = {"overrides":{},"customProds":[],"deletedIds":[],"extraCats":[],"offers":[{"id":"o1","title":"Fresh savings, every single day","subtitle":"Great prices on the essentials your kitchen never runs out of.","img":null},{"id":"o2","title":"Free delivery on orders over AED 50","subtitle":"Order on WhatsApp and we will bring it to your door.","img":null}]};
+</script>
 <script>
 
 /* ==========================================================================
@@ -691,19 +694,10 @@ function iconSvg(key, cls){
    --------------------------------------------------------------------------
    The 4,894 products above (BASE_PRODUCTS) never change.
 
-   Only ONE thing is saved in the visitor's browser: their shopping cart
-   (kt_cart), so it survives an accidental refresh — completely normal for
-   an online store, and it only ever lives on that visitor's own device.
-
-   Everything the admin does in this browser — editing a price, adding a
-   product, deleting one, adding an offer banner or a category — is kept
-   in memory only (overrides / customProds / deletedIds / extraCats /
-   offers, all plain JS variables below), and is merged with BASE_PRODUCTS
-   live at render time (see getAllProducts()). This is intentionally a
-   LIVE PREVIEW: refreshing the page, or opening the site in another tab
-   or device, resets it back to the original catalog. To make a change
-   permanent for every visitor, send the updated product/offer data and
-   it gets baked directly into BASE_PRODUCTS in the file itself.
+   Admin edits are now persisted in two places:
+   1) the browser's localStorage so they survive refreshes on the same device
+   2) the HTML source itself when a local server is running, so the edits are
+      reflected in the file for future reloads and sharing.
    ========================================================================== */
 /* ---------- state persistence ---------- */
 function loadJSON(key, fallback){
@@ -714,25 +708,103 @@ function saveJSON(key, val){
   catch(e){ showToast("Storage is full — try removing some items from your cart."); return false; }
 }
 
-let overrides   = {};      // id -> {n,c,p,u,img} — session-only (live preview, resets on refresh)
-let customProds = [];      // [{id,n,c,p,u,img}]  — session-only (live preview, resets on refresh)
-let deletedIds  = new Set(); // [id,...]          — session-only (live preview, resets on refresh)
-let extraCats   = [];      // [{id,label,icon}]   — session-only (live preview, resets on refresh)
-let offers      = [
+const DEFAULT_OFFERS = [
   {id:'o1', title:'Fresh savings, every single day', subtitle:'Great prices on the essentials your kitchen never runs out of.', img:null},
   {id:'o2', title:'Free delivery on orders over AED 50', subtitle:'Order on WhatsApp and we will bring it to your door.', img:null}
-];                          // session-only (live preview, resets on refresh)
-let cart        = loadJSON('kt_cart', {});  // id -> qty — the ONLY thing saved in the browser, so a refresh keeps the cart
-let isAdmin     = false;    // session-only — refreshing the page always logs the admin panel out again
+];
 
-// These no longer write to localStorage — admin changes are intentionally
-// temporary (see ADMIN DATA LAYER note above). Kept as no-op functions so
-// the rest of the code that calls them doesn't need to change.
-function saveOverrides(){ /* session-only, not persisted */ }
-function saveCustom(){ /* session-only, not persisted */ }
-function saveDeleted(){ /* session-only, not persisted */ }
-function saveExtraCats(){ /* session-only, not persisted */ }
-function saveOffers(){ /* session-only, not persisted */ }
+/* PERSISTED_ADMIN_STATE_START */
+const PERSISTED_ADMIN_STATE = {
+  overrides: {},
+  customProds: [],
+  deletedIds: [],
+  extraCats: [],
+  offers: DEFAULT_OFFERS.slice()
+};
+/* PERSISTED_ADMIN_STATE_END */
+
+function readPersistedAdminState(){
+  const inlineState = (typeof window !== 'undefined' && window.__KENTOWN_ADMIN_STATE__ && typeof window.__KENTOWN_ADMIN_STATE__ === 'object') ? window.__KENTOWN_ADMIN_STATE__ : null;
+  const source = inlineState || loadJSON('kt_admin_state', null) || PERSISTED_ADMIN_STATE || {};
+  return {
+    overrides: source.overrides || {},
+    customProds: Array.isArray(source.customProds) ? source.customProds : [],
+    deletedIds: Array.isArray(source.deletedIds) ? source.deletedIds : [],
+    extraCats: Array.isArray(source.extraCats) ? source.extraCats : [],
+    offers: Array.isArray(source.offers) && source.offers.length ? source.offers : DEFAULT_OFFERS.slice()
+  };
+}
+
+const persistedAdminState = readPersistedAdminState();
+let overrides   = persistedAdminState.overrides;      // id -> {n,c,p,u,img}
+let customProds = persistedAdminState.customProds;      // [{id,n,c,p,u,img}]
+let deletedIds  = new Set(persistedAdminState.deletedIds); // [id,...]
+let extraCats   = persistedAdminState.extraCats;      // [{id,label,icon}]
+let offers      = persistedAdminState.offers.slice(); // [{id,title,subtitle,img}]
+let cart        = loadJSON('kt_cart', {});  // id -> qty — the ONLY thing saved in the browser, so a refresh keeps the cart
+let isAdmin     = false;
+let persistTimer = null;
+
+function serializeAdminState(){
+  return {
+    overrides,
+    customProds,
+    deletedIds: Array.from(deletedIds),
+    extraCats,
+    offers
+  };
+}
+
+function applyAdminState(state){
+  if(!state || typeof state !== 'object') return;
+  overrides = state.overrides || {};
+  customProds = Array.isArray(state.customProds) ? state.customProds : [];
+  deletedIds = new Set(Array.isArray(state.deletedIds) ? state.deletedIds : []);
+  extraCats = Array.isArray(state.extraCats) ? state.extraCats : [];
+  offers = Array.isArray(state.offers) && state.offers.length ? state.offers.slice() : DEFAULT_OFFERS.slice();
+  window.__KENTOWN_ADMIN_STATE__ = serializeAdminState();
+  invalidate();
+}
+
+async function persistAdminState(){
+  const payload = serializeAdminState();
+  saveJSON('kt_admin_state', payload);
+  window.__KENTOWN_ADMIN_STATE__ = payload;
+  try{
+    const res = await fetch('/api/save-state', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    if(!res.ok){ throw new Error('save failed'); }
+    showToast('Changes saved to the page source');
+  }catch(e){
+    showToast('Changes saved locally for this browser');
+  }
+}
+
+function queuePersistAdminState(){
+  clearTimeout(persistTimer);
+  persistTimer = setTimeout(()=>{ persistAdminState(); }, 120);
+}
+
+async function hydrateStateFromRemoteIfAvailable(){
+  try{
+    const res = await fetch('/api/admin-state', {cache:'no-store'});
+    if(!res.ok) return;
+    const remote = await res.json();
+    if(remote && typeof remote === 'object'){
+      applyAdminState(remote);
+      saveJSON('kt_admin_state', serializeAdminState());
+    }
+  }catch(e){/* ignore */}
+}
+
+function saveOverrides(){ queuePersistAdminState(); }
+function saveCustom(){ queuePersistAdminState(); }
+function saveDeleted(){ queuePersistAdminState(); }
+function saveExtraCats(){ queuePersistAdminState(); }
+function saveOffers(){ queuePersistAdminState(); }
 function saveCart(){ saveJSON('kt_cart', cart); }
 
 /* ---------- merged product / category helpers ---------- */
@@ -1522,8 +1594,9 @@ $('#navSearch').addEventListener('click', ()=>{
 });
 
 /* ---------- init ---------- */
-function init(){
+async function init(){
   try{
+    await hydrateStateFromRemoteIfAvailable();
     renderCatRail();
     renderOffers();
     updateSectionTitle();
@@ -1538,7 +1611,7 @@ function init(){
     }catch(_){/* ignore */}
   }
 }
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', ()=>{ init(); });
 
 // Ensure main content is pushed below the sticky header+cat rail.
 function updateStickySpacing(){
