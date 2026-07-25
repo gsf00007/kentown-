@@ -1532,7 +1532,7 @@ function renderOffersTab(){
     '</div>'+
     '<div class="form-actions"><button class="btn-primary" id="ofSave">Add offer</button></div>'+
     '<h4 style="margin:20px 0 10px;">Current offers</h4>'+
-    '<div id="ofList"></div>';
+    '<div id="ofList" style="display:flex;flex-direction:column;gap:8px;"></div>';
   wireImageDrop('ofImg','ofDrop','ofPreview', (url)=>{ newOfferImg = url; });
   $('#ofSave').addEventListener('click', ()=>{
     const title = $('#ofTitle').value.trim();
