@@ -807,7 +807,7 @@ async function persistAdminState(){
     if(!res.ok){ throw new Error('save failed'); }
     showToast('Changes saved to the page source');
   }catch(e){
-    showToast('Changes saved locally for this browser');
+    showToast('Unable to save to the page source; changes were saved locally for this browser. Run the app through the local server to persist in code.');
   }
 }
 
@@ -820,24 +820,21 @@ async function hydrateStateFromRemoteIfAvailable(){
   try{
     const local = loadJSON('kt_admin_state', null);
     const res = await fetch('/api/admin-state', {cache:'no-store'});
-    if(!res.ok) return;
+    if(!res.ok){
+      if(local && typeof local === 'object') applyAdminState(local);
+      return;
+    }
     const remote = await res.json();
     if(remote && typeof remote === 'object'){
-      if(local && typeof local === 'object'){
-        const merged = {
-          overrides: Object.assign({}, remote.overrides || {}, local.overrides || {}),
-          customProds: Array.isArray(local.customProds) ? local.customProds : (Array.isArray(remote.customProds) ? remote.customProds : []),
-          deletedIds: Array.isArray(local.deletedIds) ? local.deletedIds : (Array.isArray(remote.deletedIds) ? remote.deletedIds : []),
-          extraCats: Array.isArray(local.extraCats) ? local.extraCats : (Array.isArray(remote.extraCats) ? remote.extraCats : []),
-          offers: Array.isArray(local.offers) && local.offers.length ? local.offers : (Array.isArray(remote.offers) ? remote.offers : DEFAULT_OFFERS.slice())
-        };
-        applyAdminState(merged);
-      }else{
-        applyAdminState(remote);
-      }
+      applyAdminState(remote);
       saveJSON('kt_admin_state', serializeAdminState());
+    }else if(local && typeof local === 'object'){
+      applyAdminState(local);
     }
-  }catch(e){/* ignore */}
+  }catch(e){
+    const local = loadJSON('kt_admin_state', null);
+    if(local && typeof local === 'object') applyAdminState(local);
+  }
 }
 
 function saveOverrides(){ queuePersistAdminState(); }

@@ -28,6 +28,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == '/api/admin-state':
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
+            self.send_header('Cache-Control', 'no-store, must-revalidate')
             self.end_headers()
             if STATE_FILE.exists():
                 self.wfile.write(STATE_FILE.read_bytes())
@@ -37,6 +38,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == '/':
             self.send_response(200)
             self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Cache-Control', 'no-store, must-revalidate')
             self.end_headers()
             self.wfile.write(INDEX.read_bytes())
             return
@@ -46,10 +48,12 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_response(200)
                 content_type = 'text/html; charset=utf-8' if path.suffix.lower() in {'.html', '.htm'} else 'application/octet-stream'
                 self.send_header('Content-Type', content_type)
+                self.send_header('Cache-Control', 'no-store, must-revalidate')
                 self.end_headers()
                 self.wfile.write(path.read_bytes())
                 return
         self.send_response(404)
+        self.send_header('Cache-Control', 'no-store, must-revalidate')
         self.end_headers()
 
     def do_POST(self):
@@ -60,16 +64,19 @@ class Handler(BaseHTTPRequestHandler):
                 payload = json.loads(body)
             except Exception:
                 self.send_response(400)
+                self.send_header('Cache-Control', 'no-store, must-revalidate')
                 self.end_headers()
                 return
             STATE_FILE.write_text(json.dumps(payload, indent=2))
             write_state_to_source(payload)
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
+            self.send_header('Cache-Control', 'no-store, must-revalidate')
             self.end_headers()
             self.wfile.write(b'{"ok":true}')
             return
         self.send_response(404)
+        self.send_header('Cache-Control', 'no-store, must-revalidate')
         self.end_headers()
 
     def log_message(self, format, *args):
