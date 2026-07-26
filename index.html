@@ -624,7 +624,34 @@ footer a{color:var(--amber-500);font-weight:600;}
 <div class="toast" id="toast"></div>
 
 <script id="kentown-admin-state">
-window.__KENTOWN_ADMIN_STATE__ = {"overrides":{},"customProds":[],"deletedIds":[],"extraCats":[],"offers":[{"id":"o1","title":"Fresh savings, every single day","subtitle":"Great prices on the essentials your kitchen never runs out of.","img":null},{"id":"o2","title":"Free delivery on orders over AED 50","subtitle":"Order on WhatsApp and we will bring it to your door.","img":null}]};
+window.__KENTOWN_ADMIN_STATE__ = {
+  "overrides": {
+    "K00001": {
+      "n": "Almarai Vetal Layered Black Cherry Yogurt",
+      "c": "dairy",
+      "p": 2,
+      "u": "140 gr",
+      "img": "https://www.goshoppi.ae/images/variants/Almarai-Vetal-Layered-Fruit-Yoghurt-Black-Cherry-140g.jpg"
+    }
+  },
+  "customProds": [],
+  "deletedIds": [],
+  "extraCats": [],
+  "offers": [
+    {
+      "id": "o1",
+      "title": "Fresh savings, every single day",
+      "subtitle": "Great prices on the essentials your kitchen never runs out of.",
+      "img": null
+    },
+    {
+      "id": "o1784978542089",
+      "title": "Fast and Free home delivery",
+      "subtitle": "",
+      "img": null
+    }
+  ]
+};
 </script>
 <script>
 
@@ -725,7 +752,8 @@ const PERSISTED_ADMIN_STATE = {
 
 function readPersistedAdminState(){
   const inlineState = (typeof window !== 'undefined' && window.__KENTOWN_ADMIN_STATE__ && typeof window.__KENTOWN_ADMIN_STATE__ === 'object') ? window.__KENTOWN_ADMIN_STATE__ : null;
-  const source = inlineState || loadJSON('kt_admin_state', null) || PERSISTED_ADMIN_STATE || {};
+  const localState = loadJSON('kt_admin_state', null);
+  const source = Object.assign({}, PERSISTED_ADMIN_STATE, inlineState || {}, localState || {});
   return {
     overrides: source.overrides || {},
     customProds: Array.isArray(source.customProds) ? source.customProds : [],
@@ -790,11 +818,23 @@ function queuePersistAdminState(){
 
 async function hydrateStateFromRemoteIfAvailable(){
   try{
+    const local = loadJSON('kt_admin_state', null);
     const res = await fetch('/api/admin-state', {cache:'no-store'});
     if(!res.ok) return;
     const remote = await res.json();
     if(remote && typeof remote === 'object'){
-      applyAdminState(remote);
+      if(local && typeof local === 'object'){
+        const merged = {
+          overrides: Object.assign({}, remote.overrides || {}, local.overrides || {}),
+          customProds: Array.isArray(local.customProds) ? local.customProds : (Array.isArray(remote.customProds) ? remote.customProds : []),
+          deletedIds: Array.isArray(local.deletedIds) ? local.deletedIds : (Array.isArray(remote.deletedIds) ? remote.deletedIds : []),
+          extraCats: Array.isArray(local.extraCats) ? local.extraCats : (Array.isArray(remote.extraCats) ? remote.extraCats : []),
+          offers: Array.isArray(local.offers) && local.offers.length ? local.offers : (Array.isArray(remote.offers) ? remote.offers : DEFAULT_OFFERS.slice())
+        };
+        applyAdminState(merged);
+      }else{
+        applyAdminState(remote);
+      }
       saveJSON('kt_admin_state', serializeAdminState());
     }
   }catch(e){/* ignore */}
