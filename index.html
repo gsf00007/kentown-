@@ -805,6 +805,7 @@ async function persistAdminState(){
       body: JSON.stringify(payload)
     });
     if(!res.ok){ throw new Error('save failed'); }
+    localStorage.removeItem('kt_admin_state');
     showToast('Changes saved to the page source');
   }catch(e){
     showToast('Unable to save to the page source; changes were saved locally for this browser. Run the app through the local server to persist in code.');
@@ -828,6 +829,7 @@ async function hydrateStateFromRemoteIfAvailable(){
     if(remote && typeof remote === 'object'){
       applyAdminState(remote);
       saveJSON('kt_admin_state', serializeAdminState());
+      localStorage.removeItem('kt_admin_state');
     }else if(local && typeof local === 'object'){
       applyAdminState(local);
     }
