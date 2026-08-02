@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -665,24 +666,10 @@ window.__KENTOWN_ADMIN_STATE__ = {
       "p": 14,
       "u": "20",
       "img": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6tIKnXc7Optmy8hukOo0YxPtNTVF7yJmy4il4TW5u5w&s=10"
-    },
-    {
-      "id": "Cmsbvixlsv09a",
-      "n": "dunhill black",
-      "c": "tobacco",
-      "p": 14,
-      "u": "20",
-      "img": "https://asadsmoking.com/wp-content/uploads/2025/10/dunhill-black-cigarettes-dubai-2026.webp"
     }
   ],
   "deletedIds": [],
-  "extraCats": [
-    {
-      "id": "tobacco",
-      "label": "tobacco",
-      "icon": "leaf"
-    }
-  ],
+  "extraCats": [],
   "offers": [
     {
       "id": "o1",
@@ -852,22 +839,32 @@ function applyAdminState(state){
   if(typeof refreshStoreUi === 'function') refreshStoreUi();
 }
 
+/* ---------- Firebase Firestore sync ----------
+   This is what makes admin changes visible to EVERY visitor, not just
+   the browser that made the change. GitHub Pages can only serve static
+   files, so instead of a real backend we read/write a single Firestore
+   document directly from the browser using the REST API (no SDK, no
+   build step needed — just fetch calls). */
+const FIREBASE_PROJECT_ID = 'kentown-minimart';
+const FIREBASE_API_KEY = 'AIzaSyDFyJrVjoSaJ-tKZ5Kyk8bkyfbdmZOuVBY';
+const FIRESTORE_DOC_URL = 'https://firestore.googleapis.com/v1/projects/' + FIREBASE_PROJECT_ID + '/databases/(default)/documents/kentown/state?key=' + FIREBASE_API_KEY;
+
 async function persistAdminState(){
   const payload = serializeAdminState();
   saveJSON('kt_admin_state', payload);
   window.__KENTOWN_ADMIN_STATE__ = payload;
   try{
-    const res = await fetch('/api/save-state', {
-      method: 'POST',
+    const res = await fetch(FIRESTORE_DOC_URL, {
+      method: 'PATCH',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ fields: { data: { stringValue: JSON.stringify(payload) } } })
     });
-    if(!res.ok){ throw new Error('save failed'); }
+    if(!res.ok){ throw new Error('save failed: ' + res.status); }
     localStorage.removeItem('kt_admin_state');
     await hydrateStateFromRemoteIfAvailable({showToast:false});
     showToast('Changes saved to the shared site data');
   }catch(e){
-    showToast('Unable to save to the page source; changes were saved locally for this browser. Run the app through the local server to persist in code.');
+    showToast('Unable to reach the shared database; changes were saved locally for this browser. Check your internet connection.');
   }
 }
 
@@ -880,12 +877,14 @@ async function hydrateStateFromRemoteIfAvailable(options){
   const opts = options || {};
   try{
     const local = loadJSON('kt_admin_state', null);
-    const res = await fetch('/api/admin-state', {cache:'no-store'});
+    const res = await fetch(FIRESTORE_DOC_URL, {cache:'no-store'});
     if(!res.ok){
       if(local && typeof local === 'object') applyAdminState(local);
       return;
     }
-    const remote = await res.json(); 
+    const doc = await res.json();
+    const raw = doc && doc.fields && doc.fields.data && doc.fields.data.stringValue;
+    const remote = raw ? JSON.parse(raw) : null;
     if(remote && typeof remote === 'object'){
       const currentSnapshot = getAdminStateSnapshot();
       const remoteSnapshot = getAdminStateSnapshot(remote);
