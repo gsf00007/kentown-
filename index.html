@@ -785,7 +785,7 @@ const PERSISTED_ADMIN_STATE = {
 function readPersistedAdminState(){
   const inlineState = (typeof window !== 'undefined' && window.__KENTOWN_ADMIN_STATE__ && typeof window.__KENTOWN_ADMIN_STATE__ === 'object') ? window.__KENTOWN_ADMIN_STATE__ : null;
   const localState = loadJSON('kt_admin_state', null);
-  const source = Object.assign({}, PERSISTED_ADMIN_STATE, inlineState || {}, localState || {});
+  const source = Object.assign({}, PERSISTED_ADMIN_STATE, localState || {}, inlineState || {});
   return {
     overrides: source.overrides || {},
     customProds: Array.isArray(source.customProds) ? source.customProds : [],
@@ -815,6 +815,17 @@ function serializeAdminState(){
   };
 }
 
+function getAdminStateSnapshot(state){
+  const s = state || serializeAdminState();
+  return JSON.stringify({
+    overrides: s.overrides || {},
+    customProds: Array.isArray(s.customProds) ? s.customProds : [],
+    deletedIds: Array.isArray(s.deletedIds) ? s.deletedIds : [],
+    extraCats: Array.isArray(s.extraCats) ? s.extraCats : [],
+    offers: Array.isArray(s.offers) && s.offers.length ? s.offers : DEFAULT_OFFERS.slice()
+  });
+}
+
 function applyAdminState(state){
   if(!state || typeof state !== 'object') return;
   overrides = state.overrides || {};
@@ -824,6 +835,7 @@ function applyAdminState(state){
   offers = Array.isArray(state.offers) && state.offers.length ? state.offers.slice() : DEFAULT_OFFERS.slice();
   window.__KENTOWN_ADMIN_STATE__ = serializeAdminState();
   invalidate();
+  if(typeof refreshStoreUi === 'function') refreshStoreUi();
 }
 
 async function persistAdminState(){
@@ -838,7 +850,8 @@ async function persistAdminState(){
     });
     if(!res.ok){ throw new Error('save failed'); }
     localStorage.removeItem('kt_admin_state');
-    showToast('Changes saved to the page source');
+    await hydrateStateFromRemoteIfAvailable({showToast:false});
+    showToast('Changes saved to the shared site data');
   }catch(e){
     showToast('Unable to save to the page source; changes were saved locally for this browser. Run the app through the local server to persist in code.');
   }
@@ -849,7 +862,8 @@ function queuePersistAdminState(){
   persistTimer = setTimeout(()=>{ persistAdminState(); }, 120);
 }
 
-async function hydrateStateFromRemoteIfAvailable(){
+async function hydrateStateFromRemoteIfAvailable(options){
+  const opts = options || {};
   try{
     const local = loadJSON('kt_admin_state', null);
     const res = await fetch('/api/admin-state', {cache:'no-store'});
@@ -859,9 +873,14 @@ async function hydrateStateFromRemoteIfAvailable(){
     }
     const remote = await res.json();
     if(remote && typeof remote === 'object'){
-      applyAdminState(remote);
-      saveJSON('kt_admin_state', serializeAdminState());
-      localStorage.removeItem('kt_admin_state');
+      const currentSnapshot = getAdminStateSnapshot();
+      const remoteSnapshot = getAdminStateSnapshot(remote);
+      if(remoteSnapshot !== currentSnapshot){
+        applyAdminState(remote);
+        saveJSON('kt_admin_state', serializeAdminState());
+        localStorage.removeItem('kt_admin_state');
+        if(opts.showToast !== false) showToast('Updated from shared site data');
+      }
     }else if(local && typeof local === 'object'){
       applyAdminState(local);
     }
@@ -1703,14 +1722,29 @@ $('#navSearch').addEventListener('click', ()=>{
 });
 
 /* ---------- init ---------- */
+let remoteSyncTimer = null;
+function startRemoteSync(){
+  if(remoteSyncTimer) clearInterval(remoteSyncTimer);
+  remoteSyncTimer = setInterval(()=>{
+    hydrateStateFromRemoteIfAvailable({showToast:false});
+  }, 6000);
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'visible') hydrateStateFromRemoteIfAvailable({showToast:false});
+  });
+  window.addEventListener('focus', ()=>{
+    hydrateStateFromRemoteIfAvailable({showToast:false});
+  });
+}
+
 async function init(){
   try{
-    await hydrateStateFromRemoteIfAvailable();
+    await hydrateStateFromRemoteIfAvailable({showToast:false});
     renderCatRail();
     renderOffers();
     updateSectionTitle();
     renderProducts(true);
     updateCartBadge();
+    startRemoteSync();
     console.log('Init complete — products:', computeFiltered().length);
   }catch(e){
     console.error('Init error', e);
