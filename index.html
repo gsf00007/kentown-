@@ -607,6 +607,7 @@ footer a{color:var(--amber-500);font-weight:600;}
     <div class="modal-head">
       <h3>Kentown Admin Panel</h3>
       <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn-primary" id="adminSaveCloseBtn" style="padding:8px 14px;font-size:12.5px;">Save &amp; close</button>
         <button class="btn-secondary" id="adminBackBtn" style="padding:8px 14px;font-size:12.5px;">Back to store</button>
         <button class="drawer-close" id="adminCloseBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
@@ -1338,6 +1339,12 @@ let activeAdminTab = 'add';
 let activeAdminQuery = '';
 let activeAdminEditId = null;
 
+async function saveAndCloseAdmin(){
+  await persistAdminState();
+  closeAdmin();
+  showToast('All changes saved');
+}
+
 function openAdmin(tab, editId){
   if(!isAdmin){
     const pw = prompt('Enter admin password to continue:');
@@ -1354,6 +1361,7 @@ function closeAdmin(){ adminOverlay.classList.remove('show'); adminModalOuter.cl
 $('#adminBtn').addEventListener('click', ()=>openAdmin('add'));
 $('#navAdmin').addEventListener('click', ()=>openAdmin('add'));
 $('#adminFootLink').addEventListener('click', ()=>openAdmin('add'));
+$('#adminSaveCloseBtn').addEventListener('click', saveAndCloseAdmin);
 $('#adminCloseBtn').addEventListener('click', closeAdmin);
 $('#adminBackBtn').addEventListener('click', closeAdmin); // "Back to store" — returns to normal customer browsing
 adminOverlay.addEventListener('click', closeAdmin);
