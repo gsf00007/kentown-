@@ -665,10 +665,24 @@ window.__KENTOWN_ADMIN_STATE__ = {
       "p": 14,
       "u": "20",
       "img": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6tIKnXc7Optmy8hukOo0YxPtNTVF7yJmy4il4TW5u5w&s=10"
+    },
+    {
+      "id": "Cmsbvixlsv09a",
+      "n": "dunhill black",
+      "c": "tobacco",
+      "p": 14,
+      "u": "20",
+      "img": "https://asadsmoking.com/wp-content/uploads/2025/10/dunhill-black-cigarettes-dubai-2026.webp"
     }
   ],
   "deletedIds": [],
-  "extraCats": [],
+  "extraCats": [
+    {
+      "id": "tobacco",
+      "label": "tobacco",
+      "icon": "leaf"
+    }
+  ],
   "offers": [
     {
       "id": "o1",
@@ -871,7 +885,7 @@ async function hydrateStateFromRemoteIfAvailable(options){
       if(local && typeof local === 'object') applyAdminState(local);
       return;
     }
-    const remote = await res.json();
+    const remote = await res.json(); 
     if(remote && typeof remote === 'object'){
       const currentSnapshot = getAdminStateSnapshot();
       const remoteSnapshot = getAdminStateSnapshot(remote);
