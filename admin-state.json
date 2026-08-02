@@ -3,12 +3,28 @@
     "K00001": {
       "n": "Almarai Vetal Layered Black Cherry Yogurt",
       "c": "dairy",
-      "p": 2,
+      "p": 2.4,
       "u": "140 gr",
       "img": "https://www.goshoppi.ae/images/variants/Almarai-Vetal-Layered-Fruit-Yoghurt-Black-Cherry-140g.jpg"
+    },
+    "K00019": {
+      "n": "Royal Breads Cake Rusks",
+      "c": "bakery",
+      "p": 7,
+      "u": "300 gr",
+      "img": "https://www.google.com/aclk?sa=L&ai=DChsSEwi82uPAh4KWAxWJkYMHHZ1PGAcYACICCAEQAxoCZWY&co=1&ase=2&gclid=CjwKCAjw1bvTBhBbEiwAzbP8L4rfcdo9D8b4OYV3L2hZFyjvQVaYa2f5qGK9rWGfphIG2wLvB0nVhxoCpBYQAvD_BwE&cid=CAASugHkaLQJ1JPkgEf6bXfKwZRa_ex7j7tODhHRhlusONODNJDuDXMWnJPDV2N-MKw_dXrgjWdi-wnqBLWgmdmnnOz2K4gLXqB8k8iCMXrUnm6zcaUff0mX5wWst3_g_hzeBYvIFvPxsAMKRrRtt5jxmvstAcofzTQvVLje9IPLNMyxDHuNWrIM6lg2MLVrFFVssws5e0iPTtmARGxcqZRVJqeP7NMmrQsJWoULTeK9-gTHL2JCuj0RZrqeVnI&cce=2&category=acrcp_v1_32&sig=AOD64_32L2NvHvIMAVBJjfzLLJ8xj6LqCg&ctype=5&q=&nis=4&ved=2ahUKEwi-j-DAh4KWAxWU9QIHHf9IFmwQwg8oAXoECAYQEw&adurl="
     }
   },
-  "customProds": [],
+  "customProds": [
+    {
+      "id": "Cmsbu8k8xt61g",
+      "n": "dunhill black",
+      "c": "beverages",
+      "p": 14,
+      "u": "20",
+      "img": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6tIKnXc7Optmy8hukOo0YxPtNTVF7yJmy4il4TW5u5w&s=10"
+    }
+  ],
   "deletedIds": [],
   "extraCats": [],
   "offers": [
