@@ -8,6 +8,7 @@
 <title>Kentown Mini Mart — Fresh Groceries & Daily Essentials</title>
 <style>
 :root{
+  color-scheme: light;
   --green-900:#c03232;
   --green-800:#e83535;
   --green-700:#C0392B;
@@ -111,6 +112,9 @@ header.site-header{
   color:var(--ink-900);
   caret-color:var(--ink-900);
   -webkit-text-fill-color:var(--ink-900);
+  -webkit-appearance:none;
+  appearance:none;
+  background-clip:padding-box;
 }
 .search-wrap input::placeholder{ color:var(--ink-400); opacity:1; }
 
@@ -138,6 +142,12 @@ input:-webkit-autofill:hover{
 
 /* Edge/Chromium autofill internal selector */
 input:-internal-autofill-selected{ -webkit-text-fill-color:var(--ink-900) !important; caret-color:var(--ink-900) !important; }
+
+/* Firefox placeholder */
+input::placeholder, input::-moz-placeholder{ color:var(--ink-400) !important; opacity:1 !important; }
+
+/* Ensure Android/Chromium forced dark mode doesn't invert our input colors */
+html, body{ color-scheme: light; }
 .search-wrap svg{
   position:absolute;
   right:14px;
