@@ -5,6 +5,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="color-scheme" content="light">
 <title>Kentown Mini Mart — Fresh Groceries & Daily Essentials</title>
 <style>
 :root{
@@ -148,6 +149,22 @@ input::placeholder, input::-moz-placeholder{ color:var(--ink-400) !important; op
 
 /* Ensure Android/Chromium forced dark mode doesn't invert our input colors */
 html, body{ color-scheme: light; }
+
+/* iOS Safari / WebView fixes: ensure input text is visible and not inverted */
+@supports (-webkit-overflow-scrolling: touch) {
+  .search-wrap input{
+    -webkit-text-fill-color:var(--ink-900) !important;
+    color:var(--ink-900) !important;
+    -webkit-appearance:none !important;
+    appearance:none !important;
+    background-clip:padding-box !important;
+  }
+  .search-wrap input::placeholder{ color:var(--ink-400) !important; opacity:1 !important; }
+  input:-webkit-autofill, input:-webkit-autofill:focus, input:-webkit-autofill:hover{
+    -webkit-text-fill-color:var(--ink-900) !important;
+    box-shadow:0 0 0px 1000px var(--white) inset !important;
+  }
+}
 .search-wrap svg{
   position:absolute;
   right:14px;
