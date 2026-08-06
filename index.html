@@ -109,6 +109,19 @@ header.site-header{
   font-size:14.5px;
   background:var(--white);
   color:var(--ink-900);
+  caret-color:var(--ink-900);
+  -webkit-text-fill-color:var(--ink-900);
+}
+.search-wrap input::placeholder{ color:var(--ink-400); opacity:1; }
+
+/* Make sure browser autofill doesn't make the typed text hard to read */
+input:-webkit-autofill,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:hover{
+  -webkit-text-fill-color:var(--ink-900) !important;
+  caret-color:var(--ink-900) !important;
+  box-shadow:0 0 0px 1000px var(--white) inset !important;
+  transition:background-color 5000s ease-in-out 0s !important;
 }
 .search-wrap svg{
   position:absolute;
