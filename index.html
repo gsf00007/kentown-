@@ -123,6 +123,21 @@ input:-webkit-autofill:hover{
   box-shadow:0 0 0px 1000px var(--white) inset !important;
   transition:background-color 5000s ease-in-out 0s !important;
 }
+
+/* Stronger rules to ensure text is visible across browsers/devices */
+.search-wrap input,
+.search-wrap input:focus,
+.search-wrap input:active,
+.search-wrap input:hover{
+  color:var(--ink-900) !important;
+  -webkit-text-fill-color:var(--ink-900) !important;
+  caret-color:var(--ink-900) !important;
+  background:var(--white) !important;
+  mix-blend-mode:normal !important;
+}
+
+/* Edge/Chromium autofill internal selector */
+input:-internal-autofill-selected{ -webkit-text-fill-color:var(--ink-900) !important; caret-color:var(--ink-900) !important; }
 .search-wrap svg{
   position:absolute;
   right:14px;
